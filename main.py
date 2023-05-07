@@ -1,7 +1,6 @@
 import asyncio
 from handlers import *
 
-
 async def main_async():
     from aiogram import executor
     from loader import dp
