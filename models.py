@@ -1,13 +1,8 @@
-from typing import Optional
-from pydantic import BaseModel
+from pymodm import MongoModel, fields
 
-from config import MDB
-
-class TgUser(BaseModel):
-    user_id: int
-    first_name: str
-    last_name: Optional[str] = None
-    username: Optional[str] = None
+class TgUser(MongoModel):
+    user_id: fields.IntegerField(primary_key=True)
+    first_name: fields.CharField(blank=True)
+    last_name: fields.CharField(blank=True)
+    username: fields.CharField(blank=True)
     
-    def create(self):
-        MDB.Users.insert_one(self.dict())

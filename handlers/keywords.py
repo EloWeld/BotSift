@@ -5,7 +5,6 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from aiogram.types import *
 from config import API_ID, API_HASH, BOT_TOKEN
-from database import db
 from models import TgUser
 from states import AuthSessionState
 

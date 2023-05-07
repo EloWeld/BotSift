@@ -3,5 +3,9 @@
         "activityBar.background": "#1C330B",
         "titleBar.activeBackground": "#27480F",
         "titleBar.activeForeground": "#F5FCF0"
-    }
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none"
 }

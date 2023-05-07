@@ -4,30 +4,24 @@ from loader import *
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from aiogram.types import *
-from config import API_ID, API_HASH, BOT_TOKEN, MDB
+from config import API_ID, API_HASH, BOT_TOKEN
 from models import TgUser
 from states import AuthSessionState
 
 # Start command
 @dp.message_handler(commands=["start"])
 async def start_command(message: types.Message):
-    user = MDB.Users.find_one({"user_id": message.from_user.id})
+    try:
+        user = TgUser.objects.get({'_id': message.from_user.id})
+    except TgUser.DoesNotExist:
+        user = TgUser()
+        user.user_id = message.from_user.id
     
-    if user:
-        # User exists already
-        MDB.Users.update_one({"user_id": user}, 
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name,
-            username=message.from_user.username,)
-    else:
-        # New user
-        user = TgUser(
-            user_id=message.from_user.id,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name,
-            username=message.from_user.username,
-        )
-        await MDB.Users.insert_one(user.dict())
+    # User exists already
+    user.first_name=message.from_user.first_name
+    user.last_name=message.from_user.last_name
+    user.username=message.from_user.username
+    user.save()
         
     # Send welcome
     await bot.send_message(chat_id=message.chat.id, text="Привет! Я твой бот.")
