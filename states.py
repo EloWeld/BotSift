@@ -5,3 +5,12 @@ class AuthSessionState(StatesGroup):
     login = State()
     code = State()
     password = State()
+    
+class AddGroupState(StatesGroup):
+    name = State()
+    chatID = State()
+    keywords = State()
+    bad_keywords = State()
+    ubs = State()
+    blacklist = State()
+    

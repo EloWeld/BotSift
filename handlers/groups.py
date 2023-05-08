@@ -1,65 +1,40 @@
 
 import asyncio
 from aiogram import Bot, Dispatcher, types
+from etc.keyboards import Keyboards
 from loader import *
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from aiogram.types import *
 from config import API_ID, API_HASH, BOT_TOKEN
-from models import TgUser
-from states import AuthSessionState
+from models import TgGroup, TgUser
+from states import AddGroupState
 
-# Команда добавления группы
-@dp.message_handler(commands=["addgroup"])
-async def add_group(message: types.Message):
-    try:
-        chat_id, list_name, *keywords = message.text.split()
-    except Exception as e:
-        await message.answer(f"Ошибка при обработке команды")
-    minus_words = []
+        
 
-    if not keywords:
-        await message.reply("Укажите ключевые слова после команды.")
-        return
+@dp.callback_query_handler(text_contains="|groups", state="*")
+async def _(c: CallbackQuery, state: FSMContext):
+    action = c.data.split(":")[1]
+    user = TgUser.objects.get({'_id': c.from_user.id})
+    
+    if action == "main":
+        sessions = TgGroup.objects.raw({'owner_id': user.user_id})
+        await c.message.answer("Выберите сессию или добавьте новую", reply_markup=Keyboards.USessions.main(sessions))
+    if action == "new":
+        await c.message.answer("✏️ Введите имя группы:")
+        await AddGroupState.name.set()
+    
 
-    added = await db.add_group(chat_id, list_name, keywords, minus_words)
-    if added:
-        await message.reply("Группа успешно добавлена.")
-    else:
-        await message.reply("Группа уже существует.")
+@dp.message_handler(state=AddGroupState.name)
+async def session_name_handler(message: types.Message, state: FSMContext):
+    session_name = message.text
+    await state.update_data(session_name=session_name)
+    await message.answer("✏️ Введите CHAT ID группы:")
+    await AddGroupState.chatIDs.set()    
 
-
-# Команда удаления группы
-@dp.message_handler(commands=["removegroup"])
-async def remove_group(message: types.Message):
-    chat_id = message.chat.id
-
-    removed = await db.remove_group(chat_id)
-    if removed:
-        await message.reply("Группа успешно удалена.")
-    else:
-        await message.reply("Группа не найдена.")
-
-
-# Команда добавления пользователя в черный список
-@dp.message_handler(commands=["addban"])
-async def add_ban(message: types.Message):
-    user_id = int(message.text.split()[1])
-
-    added = await db.add_to_blacklist(user_id)
-    if added:
-        await message.reply("Пользователь успешно добавлен в черный список.")
-    else:
-        await message.reply("Пользователь уже в черном списке.")
-
-
-# Команда удаления пользователя из черного списка
-@dp.message_handler(commands=["removeban"])
-async def remove_ban(message: types.Message):
-    user_id = int(message.text.split()[1])
-
-    removed = await db.remove_from_blacklist(user_id)
-    if removed:
-        await message.reply("Пользователь успешно удален из черного списка.")
-    else:
-        await message.reply("Пользователь не найден в черном списке.")
+@dp.message_handler(state=AddGroupState.chatID)
+async def session_name_handler(message: types.Message, state: FSMContext):
+    session_name = message.text
+    await state.update_data(session_name=session_name)
+    await message.answer("✏️ Введите CHAT ID группы:")
+    await AddGroupState.chatIDs.set()

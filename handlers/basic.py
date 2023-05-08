@@ -1,5 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
+from etc.keyboards import Keyboards
 from loader import *
 from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
@@ -11,8 +12,10 @@ from states import AuthSessionState
 # Start command
 
 
-@dp.message_handler(commands=["start"])
-async def start_command(message: types.Message):
+@dp.message_handler(commands=["start"], state="*")
+async def start_command(message: types.Message, state=None):
+    if state:
+        await state.finish()
     try:
         user = TgUser.objects.get({'_id': message.from_user.id})
     except TgUser.DoesNotExist:
@@ -25,7 +28,7 @@ async def start_command(message: types.Message):
     user.save()
 
     # Send welcome
-    await bot.send_message(chat_id=message.chat.id, text="Привет! Я твой бот.")
+    await bot.send_message(chat_id=message.chat.id, text="Привет! Я твой бот.", reply_markup=Keyboards.startMenu(user))
 
     # Set bot commands
     await bot.set_my_commands([
@@ -50,12 +53,12 @@ async def help_command(message: types.Message):
     help_text = """
 Команды для управления ботом:
 
-/addgroup - Добавить группу для пересылки сообщений с заданными ключевыми и минус-словами
-/removegroup - Удалить группу из списка
-/addkeywords <слово1> <слово2> ... - Добавить ключевые слова для группы
-/removekeywords <слово1> <слово2> ... - Удалить ключевые слова из группы
-/addban <user_id> - Добавить пользователя в черный список
-/removeban <user_id> - Удалить пользователя из черного списка
+/all_ub - Выводит список всех доступных user-ботов
+/auth_ub - Авторизирует нового user-бота
+
+/all_gps - Выводит список всех групп
+/add_gp - Добавляет группу
+
 /stats - Получить статистику по группе
 /help - Отобразить эту справочную информацию
 
