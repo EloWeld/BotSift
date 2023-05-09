@@ -37,6 +37,7 @@ class UserbotSession(MongoModel):
     login = fields.CharField()
     string_session = fields.CharField(blank=True)
     password = fields.CharField(blank=True)
+    is_dead = fields.BooleanField(default=False)
     
     class Meta:
         write_concern = WriteConcern(j=True)

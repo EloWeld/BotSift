@@ -65,7 +65,7 @@ async def _(c: CallbackQuery, state: FSMContext, user: TgUser):
         await c.answer()
         group: TgGroup = TgGroup.objects.get({'_id': int(c.data.split(':')[2])})
         key = c.data.split(':')[3]
-        await c.message.answer(f"✏️ Введите новое значение <b>{key}</b>. Учитие что предыдущее значение перезапишется!")
+        await c.message.answer(f"✏️ Введите новое значение <b>{key}</b>. Учтите что предыдущее значение перезапишется!")
         await state.update_data(editing_group_id=group.chat_id, editing_key=key)
         await ChangeGroupStates.Change.set()
     # Предупреждение об очистке списка
@@ -135,7 +135,7 @@ async def _(message: types.Message, state: FSMContext):
 async def _(message: types.Message, state: FSMContext):
     val = message.text
     try:
-        await state.update_data(keywords=[x.lower() for x in val.split('\n')])
+        await state.update_data(keywords=[x.lower() for x in val.replace(';', '\n').split('\n')])
     except Exception as e:
         await message.answer("⚠️ Некорректный ввод, введите ещё раз:")
         loguru.logger.error(f"Error adding group: {e}, {traceback.format_exc()}")
@@ -151,7 +151,7 @@ async def _(message: types.Message, state: FSMContext):
         if val == "0":
             await state.update_data(bad_keywords=[])
         else:
-            await state.update_data(bad_keywords=[x.lower() for x in val.split('\n')])
+            await state.update_data(bad_keywords=[x.lower() for x in val.replace(';', '\n').split('\n')])
     except Exception as e:
         await message.answer("⚠️ Некорректный ввод, введите ещё раз:")
         loguru.logger.error(f"Error adding group: {e}, {traceback.format_exc()}")
@@ -167,7 +167,7 @@ async def _(message: types.Message, state: FSMContext):
         if val == "0":
             await state.update_data(blacklist=[])
         else:
-            await state.update_data(blacklist=[x.lower() for x in val.split('\n')])
+            await state.update_data(blacklist=[x.lower() for x in val.replace(';', '\n').split('\n')])
     except Exception as e:
         await message.answer("⚠️ Некорректный ввод, введите ещё раз:")
         loguru.logger.error(f"Error adding group: {e}, {traceback.format_exc()}")
@@ -211,6 +211,7 @@ async def _(c: CallbackQuery, state: FSMContext):
         keywords=stateData['keywords'], 
         bad_keywords=stateData['bad_keywords'], 
         blacklist_users=stateData['blacklist'],
+        forwarded_msgs=[],
         ubs=ubs).save()
         
         await sendGroup(c.message, group)
@@ -251,7 +252,7 @@ async def _(message: types.Message, state: FSMContext):
     group = TgGroup.objects.raw({"_id": stateData['editing_group_id']}).first()
     editing_key = stateData['editing_key']
     if editing_key  in ['keywords', 'bad_keywords', 'blacklist_users']:
-        setattr(group, editing_key, [x.lower() for x in val.split('\n')] if val != "0" else [])
+        setattr(group, editing_key, [x.lower() for x in val.replace(';', '\n').split('\n')] if val != "0" else [])
     else:
         setattr(group, editing_key, val)
         

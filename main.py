@@ -16,7 +16,6 @@ async def main_async():
         try:
             client = userbotSessionToPyroClient(usession)
             stop_event = threading.Event()
-            
             t = threading.Thread(target=start_pyro_client, args=(client, stop_event, usession), name=f"Usebot #{client.name}")
             t.start()
             threads[usession.id] = dict(thread=t, stop_event=stop_event, client=client)

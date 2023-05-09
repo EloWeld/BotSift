@@ -16,11 +16,14 @@ from states import AuthSessionState
 import pyrogram
 from pyrogram.errors import FloodWait, SessionPasswordNeeded, PhoneNumberInvalid, PhoneCodeExpired, PhoneCodeInvalid
 
-async def sendUb(msg: Message, ubot, edit=False):
+
+async def sendUb(msg: Message, ubot: UserbotSession, edit=False):
     func = msg.answer if not edit else msg.edit_text
+    maybe_dead_text = "\n\n⚠️ Возможно требуется переавторизация!" if ubot.is_dead else ""
     await func(f"Юзербот <code>{ubot.name}</code>\n"
-                            f"Номер телефона: <code>{ubot.login}</code>\n\n"
-                            f"Строка авторизации: <code>{ubot.string_session}</code>", reply_markup=Keyboards.USessions.showUSession(ubot))
+               f"Номер телефона: <code>{ubot.login}</code>\n\n"
+               f"Строка авторизации: <code>{ubot.string_session}</code>" + maybe_dead_text, reply_markup=Keyboards.USessions.showUSession(ubot))
+
 
 @dp.callback_query_handler(text_contains="|usessions", state="*")
 async def _(c: CallbackQuery, state: FSMContext):
@@ -32,18 +35,36 @@ async def _(c: CallbackQuery, state: FSMContext):
         await c.message.edit_text("Выберите сессию или добавьте новую", reply_markup=Keyboards.USessions.main(sessions))
     if action == "new":
         await c.answer()
-        await c.message.answer("⚠️ Внимание! Не авторизируйте аккаут через который общаетесь с ботом! Телеграм заблокирует разглашение кода для входа из-за чего выполнить вход не удасться!\n\n✏️ Введите имя сессии:")
+        await c.message.answer("⚠️ Внимание! Не авторизируйте аккаунт, через который общаетесь с ботом! Телеграм заблокирует разглашение кода для входа из-за чего выполнить вход не удасться!\n\n✏️ Введите имя сессии:")
         await AuthSessionState.session_name.set()
     if action == "see":
-        us = UserbotSession.objects.get({'_id': c.data.split(":")[2]})
+        us: UserbotSession = UserbotSession.objects.get(
+            {'_id': c.data.split(":")[2]})
         await sendUb(c.message, us, True)
         await c.answer()
     if action == "reauthorize":
-        us = UserbotSession.objects.get({'_id': c.data.split(":")[2]})
-        await c.message.answer("⚠️ Внимание! Не авторизируйте аккаут через который общаетесь с ботом! Телеграм заблокирует разглашение кода для входа из-за чего выполнить вход не удасться!\n\n✏️ Введите НОВОЕ имя сессии:")
+        await c.answer()
+        us: UserbotSession = UserbotSession.objects.get(
+            {'_id': c.data.split(":")[2]})
+        await c.message.answer("⚠️ Внимание! Не авторизируйте аккаунт, через который общаетесь с ботом! Телеграм заблокирует разглашение кода для входа из-за чего выполнить вход не удасться!\n\n✏️ Введите НОВОЕ имя сессии:")
         await state.update_data(editing_us_id=us.id)
         await AuthSessionState.session_name.set()
-        
+    if action == "delete_popup":
+        await c.answer()
+        us: UserbotSession = UserbotSession.objects.get(
+            {'_id': c.data.split(":")[2]})
+        await c.message.answer(f"⚠️ Вы уверены что хоитте удалить юзербота <b>{us.name}</b>?", reply_markup=Keyboards.Popup(f"|usessions:delete:{us.id}"))
+    if action == "delete":
+        global threads
+        us: UserbotSession = UserbotSession.objects.get(
+            {'_id': c.data.split(":")[2]})
+        await c.message.answer(f"🗑️ Юзербот <b>{us.name}</b> удалён")
+        if us.id in threads:
+            threads[us.id]['stop_event'].set()
+        us.delete()
+
+        sessions = UserbotSession.objects.all()
+        await c.message.answer("Выберите сессию или добавьте новую", reply_markup=Keyboards.USessions.main(sessions))
 
 
 async def sendCode(message: Message, state: FSMContext):
@@ -52,7 +73,8 @@ async def sendCode(message: Message, state: FSMContext):
 
     # Создаем новый экземпляр Pyrogram клиента
 
-    client: pyrogram.Client = pyrogram.Client(":memory:", api_id=API_ID, api_hash=API_HASH, in_memory=True)
+    client: pyrogram.Client = pyrogram.Client(
+        ":memory:", api_id=API_ID, api_hash=API_HASH, in_memory=True)
 
     try:
         await client.connect()
@@ -120,7 +142,8 @@ async def code_handler(message: types.Message, state: FSMContext):
 
     code = message.text.strip()
     stateData = await state.get_data()
-    print(f"Получен код пользователя: {code}, phone_code_hash: {stateData['phone_code_hash']}")
+    print(
+        f"Получен код пользователя: {code}, phone_code_hash: {stateData['phone_code_hash']}")
 
     client: pyrogram.Client = pyrogram_clients[-1]
     try:
@@ -162,37 +185,45 @@ async def password_handler(message: types.Message, state: FSMContext):
 async def authSession(message: Message, client, state):
     global threads
     user: TgUser = TgUser.objects.get({"_id": message.from_user.id})
-    
+
     stateData = await state.get_data()
     string_session = await client.export_session_string()
     if 'editing_us_id' in stateData:
-        us: UserbotSession = UserbotSession.objects.get({"_id":stateData['editing_us_id']})
+        us: UserbotSession = UserbotSession.objects.get(
+            {"_id": stateData['editing_us_id']})
         us.name = stateData['session_name']
         us.string_session = string_session
         us.login = stateData['login']
+        us.is_dead = False
         us.save()
         # Try to stop current userbot client
         try:
             threads[us.id]['stop_event'].set()
         except Exception as e:
-            loguru.logger.error(f"Can't stop current userbot client, error: {e}, traceback: {traceback.format_exc()}")
-        
+            loguru.logger.error(
+                f"Can't stop current userbot client, error: {e}, traceback: {traceback.format_exc()}")
+
     else:
-        us = UserbotSession(id=str(uuid4())[:12], owner_id=user.user_id, name=stateData['session_name'],
-                   login=stateData['login'], string_session=string_session).save()
+        us = UserbotSession(id=str(uuid4())[:12],
+                            owner_id=user.user_id,
+                            name=stateData['session_name'],
+                            login=stateData['login'],
+                            string_session=string_session,
+                            is_dead=False).save()
     await message.answer("✅ Сессия успешно авторизована.")
     await state.finish()
     await dp.storage.reset_data(chat=user.user_id)
     await sendUb(message, us, False)
     await client.disconnect()
-    
+
     try:
         client = userbotSessionToPyroClient(us)
         stop_event = threading.Event()
-        
+
         t = threading.Thread(target=start_pyro_client, args=(client, stop_event, us), name=f"Usebot #{client.name}")
         t.start()
         threads[us.id] = dict(thread=t, stop_event=stop_event, client=client)
-    
+
     except Exception as e:
-        loguru.logger.error(f"Can't start userbot session {us.name}. Error: {e}, traceback: {traceback.format_exc()}")
+        loguru.logger.error(
+            f"Can't start userbot session {us.name}. Error: {e}, traceback: {traceback.format_exc()}")

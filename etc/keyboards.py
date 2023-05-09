@@ -1,3 +1,4 @@
+import json
 from typing import List, Union
 from aiogram.types import \
     ReplyKeyboardMarkup as Keyboard, \
@@ -28,7 +29,8 @@ class Keyboards:
         @staticmethod
         def showUSession(usession: UserbotSession):
             k = IKeyboard()
-            k.row(IButton("♻️ Переавторизировать", callback_data=f"|usessions:reauthorize:{usession.id}"))
+            k.row(IButton("♻️ Переавторизовать", callback_data=f"|usessions:reauthorize:{usession.id}"))
+            k.row(IButton("🗑️ Удалить", callback_data=f"|usessions:delete_popup:{usession.id}"))
             k.row(IButton("⬅️ Назад", callback_data=f"|usessions:main"))
             return k
         
@@ -136,4 +138,3 @@ class Keyboards:
             inline_keyboard.append(keyboard_row)
 
         return {"inline_keyboard": inline_keyboard}
-        

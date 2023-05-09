@@ -14,4 +14,3 @@ MONGODB_CONNECTION_URI = os.getenv("MONGODB_CONNECTION_URI")
 # Mongo
 MDB = pymongo.MongoClient(MONGODB_CONNECTION_URI).get_database("BotSift")
 connect(MONGODB_CONNECTION_URI, alias="pymodm-conn")
-

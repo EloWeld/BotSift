@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 from aiogram import Bot, Dispatcher, types
 from etc.keyboards import Keyboards
 from loader import *
@@ -6,7 +7,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import FSMContext
 from aiogram.types import *
 from config import API_ID, API_HASH, BOT_TOKEN
-from models import TgUser
+from models import TgGroup, TgUser
 from states import AuthSessionState
 
 
@@ -49,10 +50,12 @@ async def start_command(message: types.Message, state: FSMContext=None):
         await message.answer("⚠️ Вы не авторизованы. Пожалуйста, введите секретный ключ:")
 
     # Set bot commands
+    await bot.set_my_commands([])
     await bot.set_my_commands([
         BotCommand("start", "Презапуск бота"),
+        BotCommand("stats", "Статистика"),
         BotCommand("help", "Помощь")
-    ])
+    ], scope=BotCommandScopeAllPrivateChats())
 
 
 # Get statistics
@@ -60,8 +63,22 @@ async def start_command(message: types.Message, state: FSMContext=None):
 async def get_stats(message: types.Message):
     chat_id = message.chat.id
 
-    count = await db.get_stats(chat_id)
-    await message.reply(f"Статистика: {count} сообщений.")
+    groups: List[TgGroup] = TgGroup.objects.all()
+    sender_groups = {}
+    fwded_messages_count = 0
+    for gr in groups:
+        for fwd in gr.forwarded_msgs:
+            if fwd['from_chat'] not in sender_groups:
+                sender_groups[fwd['from_chat']] = dict(title=fwd['from_chat_title'], id=fwd['from_chat'], msgs=[])
+                
+            sender_groups[fwd['from_chat']]['msgs'] += [fwd]
+            fwded_messages_count += 1
+            
+    stats_text = ""
+    for x in sender_groups:
+        stats_text += f"Из группы <a href='https://t.me/c/{str(x).replace('-100','').replace('-','')}'>{sender_groups[x]['title']}</a> переслано {len(sender_groups[x]['msgs'])} сообщений\n"
+    
+    await message.reply(f"Статистика: Переслано {fwded_messages_count:,} сообщений.\n\n" + stats_text)
 
 # Get help
 
@@ -71,23 +88,14 @@ async def help_command(message: types.Message):
     help_text = """
 Команды для управления ботом:
 
-/all_ub - Выводит список всех доступных user-ботов
-/auth_ub - Авторизирует нового user-бота
-
-/all_gps - Выводит список всех групп
-/add_gp - Добавляет группу
-
-/stats - Получить статистику по группе
+/start - Перезапуск бота
+/stats - Получить статистику
+/auth_ub - Добавить юзербота
+/ping - Проверить работает ли бот
 /help - Отобразить эту справочную информацию
-
-Примеры использования:
-/addkeywords машина смета куплю окно
-/removekeywords машина смета
-/addban 93292932
-/removeban 93292932
 """
 
-    await message.reply(help_text, parse_mode=ParseMode.MARKDOWN)
+    await message.reply(help_text)
 
 # Ping pong for check bot available
 

@@ -1,4 +1,7 @@
+import json
 from pyrogram import Client
+
+from etc.keyboards import Keyboards
 
 # Create a Pyrogram client with a name and API ID and key
 app = Client(
@@ -12,8 +15,9 @@ app = Client(
 app.start()
 
 # Store a chat or user ID in the database
-app.forward_messages(-1001832567943, -1001597758982, 1081)
+#app.forward_messages(-1001832567943, -1001597758982, 1081)
 #app.forward_messages(-1001832567943, -1001832567943, 10)
+
 
 # Stop the Pyrogram client
 app.stop()
