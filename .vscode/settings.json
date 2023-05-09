@@ -5,7 +5,7 @@
         "titleBar.activeForeground": "#F5FCF0"
     },
     "[python]": {
-        "editor.defaultFormatter": "ms-python.autopep8"
+        "editor.defaultFormatter": "ms-python.python"
     },
     "python.formatting.provider": "none"
 }

@@ -4,13 +4,14 @@
     // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Python: Current File",
+         {
+            "name": "Python: main",
             "type": "python",
             "request": "launch",
+            "args": ["-Xfrozen_modules=off"],
             "program": "main.py",
             "console": "integratedTerminal",
             "justMyCode": true
-        }
+        },
     ]
 }

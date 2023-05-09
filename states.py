@@ -14,3 +14,9 @@ class AddGroupState(StatesGroup):
     ubs = State()
     blacklist = State()
     
+class ChangeGroupStates(StatesGroup):
+    Add = State()
+    Change = State()
+    Clear = State()
+    ubs = State()
+    

@@ -8,6 +8,7 @@ class TgUser(MongoModel):
     first_name = fields.CharField(blank=True)
     last_name = fields.CharField(blank=True)
     username = fields.CharField(blank=True)
+    is_authenticated = fields.BooleanField(default=False)
     
     class Meta:
         write_concern = WriteConcern(j=True)
@@ -16,11 +17,12 @@ class TgUser(MongoModel):
 
 class TgGroup(MongoModel):
     chat_id = fields.IntegerField(primary_key=True)
+    title = fields.CharField(blank=True, default="UnnamedGroup")
     owner_id = fields.ReferenceField(TgUser)
     keywords = fields.ListField(fields.CharField(), blank=True)
     bad_keywords = fields.ListField(fields.CharField(), blank=True)
-    ubs_names = fields.ListField(fields.CharField(), blank=True)
-    blacklist_user_ids = fields.ListField(fields.IntegerField(), blank=True)
+    ubs = fields.ListField(fields.CharField(), blank=True)
+    blacklist_users = fields.ListField(fields.CharField(), blank=True)
     forwarded_msgs = fields.ListField(fields.DictField(), blank=True)
     
     class Meta:
@@ -29,9 +31,16 @@ class TgGroup(MongoModel):
         collection_name = 'Groups'
         
 class UserbotSession(MongoModel):
-    id = fields.IntegerField(primary_key=True)
+    id = fields.CharField(primary_key=True)
     owner_id = fields.ReferenceField(TgUser)
     name = fields.CharField()
     login = fields.CharField()
+    string_session = fields.CharField(blank=True)
     password = fields.CharField(blank=True)
+    
+    class Meta:
+        write_concern = WriteConcern(j=True)
+        connection_alias = 'pymodm-conn'
+        collection_name = 'UserbotSessions'
+        
     
