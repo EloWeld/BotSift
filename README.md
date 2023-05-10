@@ -1,5 +1,10 @@
-# BotSift
- 
+
+
+<p align="center">
+ <img src="https://github.com/EloWeld/BotSift/assets/51724400/2411c1b7-8c1c-45e3-9a71-22059ef78518" alt="drawing" width="200"/>
+</p>
+<h1 align="center" style="margin-top: 0px;">Sift Bot</h1>
+
 Programming Language: **Python**
 
 Technology stack: **MongoDB, PyMODM, Aiogram, Pyrogram**
