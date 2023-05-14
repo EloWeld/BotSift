@@ -59,8 +59,10 @@ async def start_command(message: types.Message, state: FSMContext=None):
 
 
 # Get statistics
-@dp.message_handler(commands=["stats"], chat_type=ChatType.PRIVATE)
-async def get_stats(message: types.Message):
+@dp.message_handler(commands=["stats"], chat_type=ChatType.PRIVATE, state="*")
+async def get_stats(message: types.Message, state: FSMContext = None):
+    if state:
+        await state.finish()
     chat_id = message.chat.id
 
     groups: List[TgGroup] = TgGroup.objects.all()
@@ -83,8 +85,10 @@ async def get_stats(message: types.Message):
 # Get help
 
 
-@dp.message_handler(commands=["help"], chat_type=ChatType.PRIVATE)
-async def help_command(message: types.Message):
+@dp.message_handler(commands=["help"], chat_type=ChatType.PRIVATE, state="*")
+async def help_command(message: types.Message, state: FSMContext = None):
+    if state:
+        await state.finish()
     help_text = """
 Команды для управления ботом:
 
